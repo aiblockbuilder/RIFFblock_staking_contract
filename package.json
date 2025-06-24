@@ -6,19 +6,20 @@
     "test": "hardhat test",
     "compile": "hardhat compile",
     "clean": "hardhat clean",
+    "test-setup": "hardhat run scripts/test-setup.ts",
+    "test-setup:amoy": "hardhat run scripts/test-setup.ts --network amoy",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
     "deploy:amoy": "hardhat run scripts/deploy.ts --network amoy",
-    "deploy:mumbai": "hardhat run scripts/deploy.ts --network mumbai",
     "deploy:polygon": "hardhat run scripts/deploy.ts --network polygon",
-    "verify:amoy": "hardhat verify --network amoy",
-    "verify:mumbai": "hardhat verify --network mumbai",
+    "verify:amoy": "hardhat run scripts/verify.ts --network amoy",
     "verify:polygon": "hardhat verify --network polygon"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.3.0",
     "hardhat": "^2.22.5"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.2"
+    "dotenv": "^16.5.0"
   }
-} 
+}

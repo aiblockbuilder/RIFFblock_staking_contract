@@ -1,8 +1,14 @@
 import { ethers } from "hardhat";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 async function main() {
-  const [deployer, platform] = await ethers.getSigners();
+  const [deployer] = await ethers.getSigners();
   const network = await ethers.provider.getNetwork();
+
+  // Use deployer as platform wallet if no second signer is available
+  const platform = deployer;
 
   console.log("=== RIFFStaking Contract Deployment ===");
   console.log("Network:", network.name, `(Chain ID: ${network.chainId})`);
@@ -13,12 +19,12 @@ async function main() {
 
   // 1. Deploy MockRIFF (ERC20)
   console.log("1. Deploying MockRIFF token...");
-  const MockRIFF = await ethers.getContractFactory("MockRIFF");
-  const riffToken = await MockRIFF.deploy();
-  await riffToken.waitForDeployment();
-  console.log("   MockRIFF deployed to:", await riffToken.getAddress());
-  console.log("   Transaction hash:", riffToken.deploymentTransaction()?.hash);
-  console.log("");
+  // const MockRIFF = await ethers.getContractFactory("MockRIFF");
+  // const riffToken = await MockRIFF.deploy();
+  // await riffToken.waitForDeployment();
+  // console.log("   MockRIFF deployed to:", await riffToken.getAddress());
+  // console.log("   Transaction hash:", riffToken.deploymentTransaction()?.hash);
+  // console.log("");
 
   // 2. Deploy MockRiffNFT (ERC721)
   console.log("2. Deploying MockRiffNFT...");
@@ -36,10 +42,14 @@ async function main() {
   const platformWallet = platform.address;
 
   const RIFFStaking = await ethers.getContractFactory("RIFFStaking");
+  const riffTokenAddress = "0x963c4c0090831fcadba1fb7163efdde582f8de94"
   
+  // Use the deployed MockRIFF token address
+  // const riffTokenAddress = await riffToken.getAddress();
+
   // Estimate gas for deployment
   const deploymentData = RIFFStaking.interface.encodeDeploy([
-    await riffToken.getAddress(),
+    riffTokenAddress,
     await riffNFT.getAddress(),
     platformWallet,
     platformFee,
@@ -52,7 +62,7 @@ async function main() {
   console.log("   Estimated gas:", estimatedGas.toString());
 
   const stakingContract = await RIFFStaking.deploy(
-    await riffToken.getAddress(),
+    riffTokenAddress,
     await riffNFT.getAddress(),
     platformWallet,
     platformFee,
@@ -66,7 +76,7 @@ async function main() {
   // Final deployment summary
   console.log("=== Deployment Summary ===");
   console.log("Network:", network.name);
-  console.log("RIFF Token:", await riffToken.getAddress());
+  console.log("RIFF Token:", riffTokenAddress);
   console.log("Riff NFT:", await riffNFT.getAddress());
   console.log("Staking Contract:", await stakingContract.getAddress());
   console.log("Platform Wallet:", platformWallet);
@@ -84,16 +94,12 @@ async function main() {
     console.log("=== PolygonScan Links ===");
     console.log("Amoy Testnet Explorer:");
     console.log(`https://www.oklink.com/amoy/address/${await stakingContract.getAddress()}`);
-  } else if (network.chainId === 80001n) {
-    console.log("=== PolygonScan Links ===");
-    console.log("Mumbai Testnet Explorer:");
-    console.log(`https://mumbai.polygonscan.com/address/${await stakingContract.getAddress()}`);
   }
 
   console.log("");
   console.log("=== Verification Commands ===");
   console.log("To verify on PolygonScan, run:");
-  console.log(`npx hardhat verify --network ${network.name} ${await stakingContract.getAddress()} "${await riffToken.getAddress()}" "${await riffNFT.getAddress()}" "${platformWallet}" ${platformFee} ${stakersShare}`);
+  console.log(`npx hardhat verify --network ${network.name} ${await stakingContract.getAddress()} "${riffTokenAddress}" "${await riffNFT.getAddress()}" "${platformWallet}" ${platformFee} ${stakersShare}`);
 }
 
 main().catch((error) => {

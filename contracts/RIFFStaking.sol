@@ -5,8 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title RIFFStaking
@@ -20,7 +19,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
  * over time.
  */
 contract RIFFStaking is Ownable, ReentrancyGuard {
-    using SafeMath for uint256;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -63,7 +61,7 @@ contract RIFFStaking is Ownable, ReentrancyGuard {
     
     modifier updateReward(uint256 _tokenId, address _account) {
         rewardPerTokenStored[_tokenId] = rewardPerToken(_tokenId);
-        rewards[_account] = earned(_tokenId, _account);
+        rewards[_tokenId][_account] = earned(_tokenId, _account);
         userRewardPerTokenPaid[_tokenId][_account] = rewardPerTokenStored[_tokenId];
         _;
     }
@@ -106,8 +104,8 @@ contract RIFFStaking is Ownable, ReentrancyGuard {
         require(_amount >= MIN_STAKE_AMOUNT, "Amount is below minimum stake");
         require(riffNFT.ownerOf(_tokenId) != msg.sender, "Cannot stake on your own riff");
 
-        totalStakedPerRiff[_tokenId] = totalStakedPerRiff[_tokenId].add(_amount);
-        stakeDetails[_tokenId][msg.sender].amount = stakeDetails[_tokenId][msg.sender].amount.add(_amount);
+        totalStakedPerRiff[_tokenId] += _amount;
+        stakeDetails[_tokenId][msg.sender].amount += _amount;
         stakeDetails[_tokenId][msg.sender].stakeTime = block.timestamp;
 
         riffToken.transferFrom(msg.sender, address(this), _amount);
@@ -127,7 +125,7 @@ contract RIFFStaking is Ownable, ReentrancyGuard {
         require(amountToUnstake > 0, "No amount staked");
         require(block.timestamp >= stake.stakeTime + LOCK_DURATION, "Stake is still locked");
 
-        totalStakedPerRiff[_tokenId] = totalStakedPerRiff[_tokenId].sub(amountToUnstake);
+        totalStakedPerRiff[_tokenId] -= amountToUnstake;
         delete stakeDetails[_tokenId][msg.sender];
 
         riffToken.transfer(msg.sender, amountToUnstake);
@@ -148,9 +146,9 @@ contract RIFFStaking is Ownable, ReentrancyGuard {
     function distributeRevenue(uint256 _tokenId, uint256 _totalRevenueAmount) external onlyOwner {
         require(_totalRevenueAmount > 0, "Revenue must be positive");
 
-        uint256 stakersShare = _totalRevenueAmount.mul(stakersSharePercentage).div(100);
-        uint256 platformShare = _totalRevenueAmount.mul(platformFeePercentage).div(100);
-        uint256 artistShare = _totalRevenueAmount.sub(stakersShare).sub(platformShare);
+        uint256 stakersShare = (_totalRevenueAmount * stakersSharePercentage) / 100;
+        uint256 platformShare = (_totalRevenueAmount * platformFeePercentage) / 100;
+        uint256 artistShare = _totalRevenueAmount - stakersShare - platformShare;
         
         address artist = riffNFT.ownerOf(_tokenId);
 
@@ -161,9 +159,7 @@ contract RIFFStaking is Ownable, ReentrancyGuard {
 
         // Update rewards for stakers
         if (totalStakedPerRiff[_tokenId] > 0) {
-            rewardPerTokenStored[_tokenId] = rewardPerTokenStored[_tokenId].add(
-                stakersShare.mul(1e18).div(totalStakedPerRiff[_tokenId])
-            );
+            rewardPerTokenStored[_tokenId] += (stakersShare * 1e18) / totalStakedPerRiff[_tokenId];
         }
 
         emit RevenueDistributed(_tokenId, msg.sender, artistShare, stakersShare, platformShare);
@@ -196,7 +192,7 @@ contract RIFFStaking is Ownable, ReentrancyGuard {
         uint256 userPaidPerToken = userRewardPerTokenPaid[_tokenId][_account];
         uint256 userStake = stakeDetails[_tokenId][_account].amount;
         
-        return userStake.mul(currentRewardPerToken.sub(userPaidPerToken)).div(1e18).add(rewards[_tokenId][_account]);
+        return (userStake * (currentRewardPerToken - userPaidPerToken)) / 1e18 + rewards[_tokenId][_account];
     }
 
     /**

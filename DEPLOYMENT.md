@@ -18,7 +18,6 @@ PRIVATE_KEY=your_private_key_here
 # RPC URLs (optional - defaults will be used if not provided)
 POLYGON_RPC_URL=https://polygon-rpc.com
 AMOY_RPC_URL=https://rpc-amoy.polygon.technology
-MUMBAI_RPC_URL=https://rpc-mumbai.maticvigil.com
 
 # PolygonScan API Key for contract verification
 POLYGONSCAN_API_KEY=your_polygonscan_api_key_here
@@ -50,12 +49,6 @@ npx hardhat test
 npx hardhat run scripts/deploy.ts --network amoy
 ```
 
-### To Mumbai Testnet (Legacy)
-
-```bash
-npx hardhat run scripts/deploy.ts --network mumbai
-```
-
 ### To Polygon Mainnet
 
 ```bash
@@ -69,9 +62,6 @@ After deployment, verify your contracts on PolygonScan:
 ```bash
 # For Amoy testnet
 npx hardhat verify --network amoy DEPLOYED_CONTRACT_ADDRESS "RIFF_TOKEN_ADDRESS" "RIFF_NFT_ADDRESS" "PLATFORM_WALLET_ADDRESS" 5 15
-
-# For Mumbai testnet
-npx hardhat verify --network mumbai DEPLOYED_CONTRACT_ADDRESS "RIFF_TOKEN_ADDRESS" "RIFF_NFT_ADDRESS" "PLATFORM_WALLET_ADDRESS" 5 15
 ```
 
 Replace the parameters with your actual deployed addresses and configuration.
@@ -96,7 +86,6 @@ The deployment script will output:
 
 - **Polygon Mainnet**: Chain ID 137
 - **Amoy Testnet**: Chain ID 80002 (new testnet)
-- **Mumbai Testnet**: Chain ID 80001 (legacy)
 - **Block Time**: ~2 seconds
 - **Gas Token**: MATIC
 
@@ -106,17 +95,11 @@ The deployment script will output:
 # Deploy to Amoy testnet
 npm run deploy:amoy
 
-# Deploy to Mumbai testnet
-npm run deploy:mumbai
-
 # Deploy to Polygon mainnet
 npm run deploy:polygon
 
 # Verify on Amoy
 npm run verify:amoy
-
-# Verify on Mumbai
-npm run verify:mumbai
 
 # Verify on Polygon mainnet
 npm run verify:polygon
